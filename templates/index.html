@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow</title>
+    <style>
+        :root {
+            --bg: #f5f7fa;
+            --surface: #ffffff;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --radius: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* Nav */
+        nav {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 56px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        nav .logo { font-weight: 700; font-size: 1.25rem; color: var(--primary); }
+        nav .nav-links { display: flex; gap: 8px; align-items: center; }
+        nav .nav-links button {
+            background: none;
+            border: none;
+            padding: 8px 14px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            transition: all 0.15s;
+        }
+        nav .nav-links button:hover,
+        nav .nav-links button.active {
+            background: var(--primary);
+            color: #fff;
+        }
+        .user-info { display: flex; align-items: center; gap: 12px; font-size: 0.875rem; color: var(--text-muted); }
+        .btn-logout {
+            background: none; border: 1px solid var(--border); padding: 6px 12px;
+            border-radius: var(--radius); cursor: pointer; font-size: 0.8rem; color: var(--danger);
+        }
+        .btn-logout:hover { background: var(--danger); color: #fff; }
+
+        /* Layout */
+        .container { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+
+        /* Auth */
+        .auth-container {
+            max-width: 400px; margin: 80px auto; background: var(--surface);
+            border-radius: var(--radius); padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .auth-container h2 { margin-bottom: 24px; text-align: center; }
+        .auth-tabs { display: flex; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+        .auth-tabs button {
+            flex: 1; padding: 10px; background: none; border: none; border-bottom: 2px solid transparent;
+            cursor: pointer; font-size: 0.9rem; color: var(--text-muted);
+        }
+        .auth-tabs button.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        /* Forms */
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 4px; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+        input, select, textarea {
+            width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+            border-radius: var(--radius); font-size: 0.9rem; outline: none; transition: border 0.15s;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+        textarea { resize: vertical; min-height: 60px; }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 10px 20px; background: var(--primary); color: #fff; border: none;
+            border-radius: var(--radius); cursor: pointer; font-size: 0.875rem; font-weight: 500;
+            transition: background 0.15s;
+        }
+        .btn:hover { background: var(--primary-hover); }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+        .btn-danger { background: var(--danger); }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-outline {
+            background: none; color: var(--primary); border: 1px solid var(--primary);
+        }
+        .btn-outline:hover { background: var(--primary); color: #fff; }
+        .btn-full { width: 100%; justify-content: center; }
+
+        /* Cards */
+        .card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+            transition: box-shadow 0.15s;
+        }
+        .card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .card-header h3 { font-size: 1rem; }
+        .card-actions { display: flex; gap: 6px; }
+        .card-meta { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* Badges */
+        .badge {
+            display: inline-block; padding: 2px 8px; border-radius: 12px;
+            font-size: 0.75rem; font-weight: 500;
+        }
+        .badge-todo { background: #e0e7ff; color: #3730a3; }
+        .badge-in_progress { background: #fef3c7; color: #92400e; }
+        .badge-done { background: #d1fae5; color: #065f46; }
+        .badge-overdue { background: #fee2e2; color: #991b1b; }
+        .badge-reassigned { background: #dbeafe; color: #1e40af; }
+        .badge-status_changed { background: #f3e8ff; color: #6b21a8; }
+        .badge-unread { background: var(--warning); color: #fff; }
+
+        /* Section header */
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .section-header h2 { font-size: 1.25rem; }
+
+        /* Filters */
+        .filters {
+            display: flex; gap: 12px; flex-wrap: wrap; align-items: end;
+            background: var(--surface); padding: 16px; border-radius: var(--radius);
+            border: 1px solid var(--border); margin-bottom: 16px;
+        }
+        .filters .form-group { margin-bottom: 0; flex: 1; min-width: 140px; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+            z-index: 100; align-items: center; justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--surface); border-radius: var(--radius); padding: 24px;
+            width: 90%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+        }
+        .modal h3 { margin-bottom: 16px; }
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 24px; right: 24px; padding: 12px 20px;
+            border-radius: var(--radius); color: #fff; font-size: 0.875rem;
+            z-index: 200; animation: slideIn 0.3s ease;
+        }
+        .toast-success { background: var(--success); }
+        .toast-error { background: var(--danger); }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* Empty state */
+        .empty { text-align: center; padding: 40px; color: var(--text-muted); }
+
+        /* Pagination */
+        .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+
+        .hidden { display: none !important; }
+
+        /* Notification dot */
+        .notif-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: var(--danger);
+            display: inline-block; margin-left: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+    <div class="logo">TaskFlow</div>
+    <div id="navLinks" class="nav-links hidden">
+        <button onclick="showPage('projects')" data-page="projects">Projects</button>
+        <button onclick="showPage('tasks')" data-page="tasks">Tasks</button>
+        <button onclick="showPage('notifications')" data-page="notifications">Notifications <span id="notifDot" class="notif-dot hidden"></span></button>
+    </div>
+    <div id="userInfo" class="user-info hidden">
+        <span id="usernameDisplay"></span>
+        <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+</nav>
+
+<!-- AUTH PAGE -->
+<div id="authPage">
+    <div class="auth-container">
+        <h2>TaskFlow</h2>
+        <div class="auth-tabs">
+            <button class="active" onclick="showAuthTab('login')">Login</button>
+            <button onclick="showAuthTab('signup')">Sign Up</button>
+        </div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="loginUsername" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" required>
+            </div>
+            <button type="submit" class="btn btn-full">Login</button>
+        </form>
+
+        <form id="signupForm" class="hidden" onsubmit="handleSignup(event)">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="signupUsername" required>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="signupEmail" required>
+            </div>
+            <div class="form-group">
+                <label>Password (min 8 characters)</label>
+                <input type="password" id="signupPassword" minlength="8" required>
+            </div>
+            <button type="submit" class="btn btn-full">Sign Up</button>
+        </form>
+    </div>
+</div>
+
+<!-- PROJECTS PAGE -->
+<div id="projectsPage" class="hidden">
+    <div class="container">
+        <div class="section-header">
+            <h2>My Projects</h2>
+            <button class="btn" onclick="openProjectModal()">+ New Project</button>
+        </div>
+        <div id="projectsList"></div>
+    </div>
+</div>
+
+<!-- TASKS PAGE -->
+<div id="tasksPage" class="hidden">
+    <div class="container">
+        <div class="section-header">
+            <h2>Tasks</h2>
+            <button class="btn" onclick="openTaskModal()">+ New Task</button>
+        </div>
+        <div class="filters">
+            <div class="form-group">
+                <label>Status</label>
+                <select id="filterStatus" onchange="loadTasks()">
+                    <option value="">All</option>
+                    <option value="todo">Todo</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="done">Done</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Assignee</label>
+                <select id="filterAssignee" onchange="loadTasks()">
+                    <option value="">All</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Due From</label>
+                <input type="date" id="filterDueFrom" onchange="loadTasks()">
+            </div>
+            <div class="form-group">
+                <label>Due To</label>
+                <input type="date" id="filterDueTo" onchange="loadTasks()">
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="clearFilters()">Clear</button>
+        </div>
+        <div id="tasksList"></div>
+        <div id="tasksPagination" class="pagination"></div>
+    </div>
+</div>
+
+<!-- NOTIFICATIONS PAGE -->
+<div id="notificationsPage" class="hidden">
+    <div class="container">
+        <div class="section-header">
+            <h2>Notifications</h2>
+        </div>
+        <div id="notificationsList"></div>
+    </div>
+</div>
+
+<!-- PROJECT MODAL -->
+<div id="projectModal" class="modal-overlay" onclick="closeModal(event, 'projectModal')">
+    <div class="modal" onclick="event.stopPropagation()">
+        <h3 id="projectModalTitle">New Project</h3>
+        <form onsubmit="saveProject(event)">
+            <input type="hidden" id="projectId">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="projectName" required>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="projectDesc"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="document.getElementById('projectModal').classList.remove('show')">Cancel</button>
+                <button type="submit" class="btn">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- TASK MODAL -->
+<div id="taskModal" class="modal-overlay" onclick="closeModal(event, 'taskModal')">
+    <div class="modal" onclick="event.stopPropagation()">
+        <h3 id="taskModalTitle">New Task</h3>
+        <form onsubmit="saveTask(event)">
+            <input type="hidden" id="taskId">
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="taskTitle" required>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="taskDesc"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Project</label>
+                <select id="taskProject" required></select>
+            </div>
+            <div class="form-group">
+                <label>Assignee</label>
+                <select id="taskAssignee"></select>
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select id="taskStatus">
+                    <option value="todo">Todo</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="done">Done</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Due Date</label>
+                <input type="date" id="taskDueDate">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="document.getElementById('taskModal').classList.remove('show')">Cancel</button>
+                <button type="submit" class="btn">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const API = '';
+let accessToken = localStorage.getItem('access') || '';
+let refreshToken = localStorage.getItem('refresh') || '';
+let currentUser = localStorage.getItem('username') || '';
+let projectsCache = [];
+let usersCache = [];
+
+// --- API helper ---
+async function api(path, options = {}) {
+    const headers = { 'Content-Type': 'application/json', ...options.headers };
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+
+    let res = await fetch(API + path, { ...options, headers });
+
+    if (res.status === 401 && refreshToken) {
+        const refreshRes = await fetch(API + '/api/auth/token/refresh/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh: refreshToken }),
+        });
+        if (refreshRes.ok) {
+            const data = await refreshRes.json();
+            accessToken = data.access;
+            localStorage.setItem('access', accessToken);
+            headers['Authorization'] = `Bearer ${accessToken}`;
+            res = await fetch(API + path, { ...options, headers });
+        } else {
+            logout();
+            return null;
+        }
+    }
+
+    return res;
+}
+
+// --- Toast ---
+function toast(msg, type = 'success') {
+    const el = document.createElement('div');
+    el.className = `toast toast-${type}`;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+}
+
+// --- Auth ---
+function showAuthTab(tab) {
+    document.querySelectorAll('.auth-tabs button').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.auth-tabs button:${tab === 'login' ? 'first' : 'last'}-child`).classList.add('active');
+    document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+    document.getElementById('signupForm').classList.toggle('hidden', tab !== 'signup');
+}
+
+async function handleSignup(e) {
+    e.preventDefault();
+    const res = await fetch(API + '/api/auth/signup/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            username: document.getElementById('signupUsername').value,
+            email: document.getElementById('signupEmail').value,
+            password: document.getElementById('signupPassword').value,
+        }),
+    });
+    if (res.ok) {
+        toast('Account created! Please login.');
+        showAuthTab('login');
+    } else {
+        const err = await res.json();
+        toast(Object.values(err).flat().join(', '), 'error');
+    }
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('loginUsername').value;
+    const res = await fetch(API + '/api/auth/login/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            username,
+            password: document.getElementById('loginPassword').value,
+        }),
+    });
+    if (res.ok) {
+        const data = await res.json();
+        accessToken = data.access;
+        refreshToken = data.refresh;
+        currentUser = username;
+        localStorage.setItem('access', accessToken);
+        localStorage.setItem('refresh', refreshToken);
+        localStorage.setItem('username', username);
+        showApp();
+        toast('Welcome back, ' + username + '!');
+    } else {
+        toast('Invalid credentials', 'error');
+    }
+}
+
+function logout() {
+    accessToken = '';
+    refreshToken = '';
+    currentUser = '';
+    localStorage.clear();
+    showAuth();
+}
+
+// --- Page switching ---
+function showAuth() {
+    document.getElementById('authPage').classList.remove('hidden');
+    document.getElementById('navLinks').classList.add('hidden');
+    document.getElementById('userInfo').classList.add('hidden');
+    ['projectsPage', 'tasksPage', 'notificationsPage'].forEach(p =>
+        document.getElementById(p).classList.add('hidden'));
+}
+
+function showApp() {
+    document.getElementById('authPage').classList.add('hidden');
+    document.getElementById('navLinks').classList.remove('hidden');
+    document.getElementById('userInfo').classList.remove('hidden');
+    document.getElementById('usernameDisplay').textContent = currentUser;
+    loadUsers();
+    showPage('projects');
+}
+
+function showPage(page) {
+    ['projectsPage', 'tasksPage', 'notificationsPage'].forEach(p =>
+        document.getElementById(p).classList.add('hidden'));
+    document.getElementById(page + 'Page').classList.remove('hidden');
+    document.querySelectorAll('[data-page]').forEach(b =>
+        b.classList.toggle('active', b.dataset.page === page));
+
+    if (page === 'projects') loadProjects();
+    else if (page === 'tasks') loadTasks();
+    else if (page === 'notifications') loadNotifications();
+}
+
+// --- Users ---
+async function loadUsers() {
+    if (usersCache.length > 0) return;
+    const res = await api('/api/auth/users/');
+    if (res && res.ok) {
+        usersCache = await res.json();
+        // Populate filter assignee dropdown
+        const filterSel = document.getElementById('filterAssignee');
+        filterSel.innerHTML = '<option value="">All</option>' +
+            usersCache.map(u => `<option value="${u.id}">${esc(u.username)}</option>`).join('');
+    }
+}
+
+// --- Projects ---
+async function loadProjects() {
+    const res = await api('/api/projects/');
+    if (!res || !res.ok) return;
+    const data = await res.json();
+    projectsCache = data.results || data;
+    const list = document.getElementById('projectsList');
+
+    if (projectsCache.length === 0) {
+        list.innerHTML = '<div class="empty">No projects yet. Create one to get started!</div>';
+        return;
+    }
+
+    list.innerHTML = projectsCache.map(p => `
+        <div class="card">
+            <div class="card-header">
+                <h3>${esc(p.name)}</h3>
+                <div class="card-actions">
+                    <button class="btn btn-outline btn-sm" onclick="editProject(${p.id})">Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteProject(${p.id})">Delete</button>
+                </div>
+            </div>
+            <p class="card-meta">${esc(p.description || 'No description')}</p>
+            <p class="card-meta" style="margin-top:4px">Created: ${new Date(p.created_at).toLocaleDateString()}</p>
+        </div>
+    `).join('');
+}
+
+function openProjectModal(project = null) {
+    document.getElementById('projectModalTitle').textContent = project ? 'Edit Project' : 'New Project';
+    document.getElementById('projectId').value = project ? project.id : '';
+    document.getElementById('projectName').value = project ? project.name : '';
+    document.getElementById('projectDesc').value = project ? project.description : '';
+    document.getElementById('projectModal').classList.add('show');
+}
+
+function editProject(id) {
+    const p = projectsCache.find(x => x.id === id);
+    if (p) openProjectModal(p);
+}
+
+async function saveProject(e) {
+    e.preventDefault();
+    const id = document.getElementById('projectId').value;
+    const body = {
+        name: document.getElementById('projectName').value,
+        description: document.getElementById('projectDesc').value,
+    };
+    const res = await api(id ? `/api/projects/${id}/` : '/api/projects/', {
+        method: id ? 'PUT' : 'POST',
+        body: JSON.stringify(body),
+    });
+    if (res && res.ok) {
+        document.getElementById('projectModal').classList.remove('show');
+        toast(id ? 'Project updated' : 'Project created');
+        loadProjects();
+    } else {
+        toast('Failed to save project', 'error');
+    }
+}
+
+async function deleteProject(id) {
+    if (!confirm('Delete this project and all its tasks?')) return;
+    const res = await api(`/api/projects/${id}/`, { method: 'DELETE' });
+    if (res && (res.ok || res.status === 204)) {
+        toast('Project deleted');
+        loadProjects();
+    }
+}
+
+// --- Tasks ---
+let currentTasksPage = 1;
+
+async function loadTasks(page = 1) {
+    currentTasksPage = page;
+    const params = new URLSearchParams();
+    params.set('page', page);
+    const status = document.getElementById('filterStatus').value;
+    const assignee = document.getElementById('filterAssignee').value;
+    const dueFrom = document.getElementById('filterDueFrom').value;
+    const dueTo = document.getElementById('filterDueTo').value;
+    if (status) params.set('status', status);
+    if (assignee) params.set('assignee', assignee);
+    if (dueFrom) params.set('due_date_from', dueFrom);
+    if (dueTo) params.set('due_date_to', dueTo);
+
+    const res = await api(`/api/tasks/?${params}`);
+    if (!res || !res.ok) return;
+    const data = await res.json();
+    const tasks = data.results || data;
+    const list = document.getElementById('tasksList');
+
+    if (tasks.length === 0) {
+        list.innerHTML = '<div class="empty">No tasks found.</div>';
+        document.getElementById('tasksPagination').innerHTML = '';
+        return;
+    }
+
+    list.innerHTML = tasks.map(t => {
+        const projectName = projectsCache.find(p => p.id === t.project)?.name || `Project #${t.project}`;
+        const assigneeName = t.assignee ? (usersCache.find(u => u.id === t.assignee)?.username || `User #${t.assignee}`) : 'Unassigned';
+        const isOverdue = t.due_date && t.status !== 'done' && new Date(t.due_date) < new Date();
+        return `
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3>${esc(t.title)}</h3>
+                    <span class="card-meta">${esc(projectName)}</span>
+                </div>
+                <div class="card-actions">
+                    <span class="badge badge-${t.status}">${t.status.replace('_', ' ')}</span>
+                    ${isOverdue ? '<span class="badge badge-overdue">OVERDUE</span>' : ''}
+                    <button class="btn btn-outline btn-sm" onclick="editTask(${t.id})">Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteTask(${t.id})">Delete</button>
+                </div>
+            </div>
+            <p class="card-meta">${esc(t.description || '')}</p>
+            <p class="card-meta" style="margin-top:4px">
+                Assignee: ${esc(assigneeName)} &middot; Due: ${t.due_date || 'Not set'}
+            </p>
+        </div>`;
+    }).join('');
+
+    // Pagination
+    const pag = document.getElementById('tasksPagination');
+    pag.innerHTML = '';
+    if (data.previous) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-outline btn-sm';
+        btn.textContent = 'Previous';
+        btn.onclick = () => loadTasks(page - 1);
+        pag.appendChild(btn);
+    }
+    if (data.next) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-outline btn-sm';
+        btn.textContent = 'Next';
+        btn.onclick = () => loadTasks(page + 1);
+        pag.appendChild(btn);
+    }
+}
+
+function clearFilters() {
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterAssignee').value = '';
+    document.getElementById('filterDueFrom').value = '';
+    document.getElementById('filterDueTo').value = '';
+    loadTasks();
+}
+
+let tasksCache = [];
+async function openTaskModal(task = null) {
+    document.getElementById('taskModalTitle').textContent = task ? 'Edit Task' : 'New Task';
+    document.getElementById('taskId').value = task ? task.id : '';
+    document.getElementById('taskTitle').value = task ? task.title : '';
+    document.getElementById('taskDesc').value = task ? task.description : '';
+    document.getElementById('taskStatus').value = task ? task.status : 'todo';
+    document.getElementById('taskDueDate').value = task ? task.due_date || '' : '';
+
+    // Load projects for dropdown
+    if (projectsCache.length === 0) {
+        const res = await api('/api/projects/');
+        if (res && res.ok) {
+            const data = await res.json();
+            projectsCache = data.results || data;
+        }
+    }
+    const sel = document.getElementById('taskProject');
+    sel.innerHTML = projectsCache.map(p =>
+        `<option value="${p.id}" ${task && task.project === p.id ? 'selected' : ''}>${esc(p.name)}</option>`
+    ).join('');
+    if (projectsCache.length === 0) {
+        sel.innerHTML = '<option value="">-- Create a project first --</option>';
+    }
+
+    // Load users for assignee dropdown
+    await loadUsers();
+    const assigneeSel = document.getElementById('taskAssignee');
+    assigneeSel.innerHTML = '<option value="">Unassigned</option>' +
+        usersCache.map(u =>
+            `<option value="${u.id}" ${task && task.assignee === u.id ? 'selected' : ''}>${esc(u.username)}</option>`
+        ).join('');
+
+    document.getElementById('taskModal').classList.add('show');
+}
+
+async function editTask(id) {
+    const res = await api(`/api/tasks/${id}/`);
+    if (res && res.ok) {
+        const task = await res.json();
+        openTaskModal(task);
+    }
+}
+
+async function saveTask(e) {
+    e.preventDefault();
+    const id = document.getElementById('taskId').value;
+    const assigneeVal = document.getElementById('taskAssignee').value;
+    const body = {
+        title: document.getElementById('taskTitle').value,
+        description: document.getElementById('taskDesc').value,
+        project: parseInt(document.getElementById('taskProject').value),
+        assignee: assigneeVal ? parseInt(assigneeVal) : null,
+        status: document.getElementById('taskStatus').value,
+        due_date: document.getElementById('taskDueDate').value || null,
+    };
+    const res = await api(id ? `/api/tasks/${id}/` : '/api/tasks/', {
+        method: id ? 'PUT' : 'POST',
+        body: JSON.stringify(body),
+    });
+    if (res && res.ok) {
+        document.getElementById('taskModal').classList.remove('show');
+        toast(id ? 'Task updated' : 'Task created');
+        loadTasks(currentTasksPage);
+    } else if (res) {
+        const err = await res.json();
+        toast(Object.values(err).flat().join(', '), 'error');
+    }
+}
+
+async function deleteTask(id) {
+    if (!confirm('Delete this task?')) return;
+    const res = await api(`/api/tasks/${id}/`, { method: 'DELETE' });
+    if (res && (res.ok || res.status === 204)) {
+        toast('Task deleted');
+        loadTasks(currentTasksPage);
+    }
+}
+
+// --- Notifications ---
+async function loadNotifications() {
+    const res = await api('/api/notifications/');
+    if (!res || !res.ok) return;
+    const data = await res.json();
+    const notifs = data.results || data;
+    const list = document.getElementById('notificationsList');
+
+    const unread = notifs.filter(n => !n.is_read).length;
+    document.getElementById('notifDot').classList.toggle('hidden', unread === 0);
+
+    if (notifs.length === 0) {
+        list.innerHTML = '<div class="empty">No notifications yet.</div>';
+        return;
+    }
+
+    list.innerHTML = notifs.map(n => `
+        <div class="card" style="${n.is_read ? 'opacity:0.7' : ''}">
+            <div class="card-header">
+                <div>
+                    <span class="badge badge-${n.notification_type}">${n.notification_type.replace('_', ' ')}</span>
+                    ${!n.is_read ? '<span class="badge badge-unread">NEW</span>' : ''}
+                </div>
+                ${!n.is_read ? `<button class="btn btn-outline btn-sm" onclick="markRead(${n.id})">Mark Read</button>` : ''}
+            </div>
+            <p style="margin-top:8px">${esc(n.message)}</p>
+            <p class="card-meta" style="margin-top:4px">${new Date(n.created_at).toLocaleString()}</p>
+        </div>
+    `).join('');
+}
+
+async function markRead(id) {
+    const res = await api(`/api/notifications/${id}/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ is_read: true }),
+    });
+    if (res && res.ok) {
+        toast('Marked as read');
+        loadNotifications();
+    }
+}
+
+// --- Helpers ---
+function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+}
+
+function closeModal(e, id) {
+    if (e.target === e.currentTarget) document.getElementById(id).classList.remove('show');
+}
+
+// --- Init ---
+if (accessToken) {
+    showApp();
+} else {
+    showAuth();
+}
+</script>
+</body>
+</html>
