@@ -1,3 +1,1 @@
-from django.contrib import admin
-
-# Register your models here.
+# No custom admin registrations — using default User admin.

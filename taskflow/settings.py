@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from datetime import timedelta
 
@@ -52,8 +53,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'taskflow.wsgi.application'
-
-import os
 
 DATABASES = {
     'default': {

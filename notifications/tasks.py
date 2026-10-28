@@ -51,13 +51,10 @@ def check_overdue_tasks():
     ).select_related('project')
 
     for task in overdue_tasks:
-        if task.assignee_id is None:
-            recipient_id = task.project.owner_id
-        else:
-            recipient_id = task.assignee_id
+        recipient = task.assignee or task.project.owner
 
         notification = Notification.objects.create(
-            recipient=task.assignee or task.project.owner,
+            recipient=recipient,
             task=task,
             notification_type=Notification.Type.OVERDUE,
             message=f'Task "{task.title}" in project "{task.project.name}" is overdue (due {task.due_date}).',
