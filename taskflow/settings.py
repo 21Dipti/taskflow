@@ -117,6 +117,10 @@ CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://127.0.0.1:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
+CELERY_TASK_ALWAYS_EAGER = os.environ.get('CELERY_TASK_ALWAYS_EAGER', 'False').lower() in ('true', '1', 'yes')
+if CELERY_BROKER_URL.startswith('rediss://'):
+    CELERY_BROKER_USE_SSL = {'ssl_cert_reqs': 'CERT_NONE'}
+    CELERY_REDIS_BACKEND_USE_SSL = {'ssl_cert_reqs': 'CERT_NONE'}
 CELERY_BEAT_SCHEDULE = {
     'check-overdue-tasks': {
         'task': 'notifications.tasks.check_overdue_tasks',
@@ -126,14 +130,18 @@ CELERY_BEAT_SCHEDULE = {
 
 # Redis cache — falls back to local memory if Redis is unavailable
 if os.environ.get('REDIS_URL'):
+    _redis_options = {
+        'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        'IGNORE_EXCEPTIONS': True,
+    }
+    if os.environ['REDIS_URL'].startswith('rediss://'):
+        import ssl
+        _redis_options['CONNECTION_POOL_KWARGS'] = {'ssl_cert_reqs': ssl.CERT_NONE}
     CACHES = {
         'default': {
             'BACKEND': 'django_redis.cache.RedisCache',
             'LOCATION': os.environ['REDIS_URL'],
-            'OPTIONS': {
-                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-                'IGNORE_EXCEPTIONS': True,
-            },
+            'OPTIONS': _redis_options,
             'TIMEOUT': 300,
         }
     }

@@ -51,9 +51,15 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         from notifications.tasks import notify_task_reassigned, notify_status_changed
         if task.assignee_id != old_assignee and task.assignee_id is not None:
-            notify_task_reassigned.delay(task.id, old_assignee, task.assignee_id)
+            try:
+                notify_task_reassigned.delay(task.id, old_assignee, task.assignee_id)
+            except Exception:
+                notify_task_reassigned(task.id, old_assignee, task.assignee_id)
         if task.status != old_status:
-            notify_status_changed.delay(task.id, old_status, task.status)
+            try:
+                notify_status_changed.delay(task.id, old_status, task.status)
+            except Exception:
+                notify_status_changed(task.id, old_status, task.status)
 
         self._invalidate_task_cache()
 
