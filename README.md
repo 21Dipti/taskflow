@@ -179,10 +179,5 @@ GitHub Actions config at `.github/workflows/ci.yml` runs:
 
 ### What was deprioritized
 - **Database**: SQLite as default for easy local dev; PostgreSQL via environment variables and Docker. In production, I'd add connection pooling (pgbouncer) and proper indexes on `status`, `assignee`, `due_date`.
-- **Cache granularity**: `delete_pattern('task_list:*')` clears all users' caches on any mutation. At scale, per-user invalidation (keyed by user ID) would be more efficient — the key structure already supports it, just needs targeted deletion.
 - **Search**: Currently filter-only (exact match on status/assignee, date range). A full-text search on task title/description via PostgreSQL `SearchVector` or Elasticsearch would be the next step.
-- **Rate limiting**: Not implemented. Would add DRF's throttling (`AnonRateThrottle`, `UserRateThrottle`) to protect auth endpoints.
-- **Monitoring**: Metrics are in-memory counters that reset on restart. Would upgrade to Prometheus client (`prometheus_client`) with a `/metrics` endpoint compatible with Prometheus scraping, plus structured logging (JSON) for log aggregation.
 - **Frontend**: Simple HTML/JS served by Django templates. Adequate as a demo but not production-grade — would use React/Next.js with proper state management for a real product.
-- **API versioning**: Not implemented. Would add URL-based versioning (`/api/v1/`) from the start in a real project.
-- **Pagination cursor**: Using offset-based pagination. Cursor-based would be more efficient for large datasets.
