@@ -44,6 +44,8 @@ services:
         generateValue: true
       - key: DEBUG
         value: "False"
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: "True"
       - key: ALLOWED_HOSTS
         value: ".onrender.com"
       - key: PYTHON_VERSION
