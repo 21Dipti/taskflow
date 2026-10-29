@@ -57,25 +57,6 @@ python manage.py test --verbosity=2
 
 ---
 
-## Architecture Overview
-
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│   Frontend   │────▶│  Django DRF  │────▶│  PostgreSQL   │
-│  (HTML/JS)   │     │   REST API   │     │              │
-└──────────────┘     └──────┬───────┘     └──────────────┘
-                            │
-                    ┌───────┴────────┐
-                    │     Redis      │
-                    │ (cache+broker) │
-                    └───────┬────────┘
-                            │
-                    ┌───────┴────────┐
-                    │  Celery Worker │
-                    │ (notifications)│
-                    └────────────────┘
-```
-
 ### Key Design Decisions
 
 **JWT Authentication (SimpleJWT)** — Stateless auth scales better for APIs and avoids server-side session storage. Access tokens expire in 1 hour; refresh tokens last 7 days. Passwords are hashed via Django's PBKDF2 (bcrypt available via settings).
@@ -142,12 +123,6 @@ python manage.py test --verbosity=2
 
 **Path chosen: Docker Compose** — `docker-compose up --build` brings up the full stack (app, PostgreSQL, Redis, Celery worker, Celery beat) with a single command.
 
-For production deployment to a cloud provider (Render, Railway, Fly.io, AWS):
-1. Set environment variables for `SECRET_KEY`, `DB_*`, `REDIS_URL`, `CELERY_BROKER_URL`
-2. Use the provided Dockerfile
-3. Run `python manage.py migrate` as a release command
-4. Configure a separate process for the Celery worker
-
 ---
 
 ## CI Pipeline
@@ -170,12 +145,10 @@ GitHub Actions config at `.github/workflows/ci.yml` runs:
 
 ---
 
-## Tradeoffs & What I'd Do With More Time
+## What I'd Do With More Time
 
 ### What was prioritized
 - **Correctness**: Authorization boundaries, cache invalidation, notification triggers — these are tested thoroughly because bugs here are the most damaging.
-- **Full Docker setup**: One command to run the entire stack, matching production topology.
-- **Test coverage**: 42 tests covering the core flow and tricky paths (auth boundaries, cache staleness, background job triggering).
 
 ### What was deprioritized
 - **Database**: SQLite as default for easy local dev; PostgreSQL via environment variables and Docker. In production, I'd add connection pooling (pgbouncer) and proper indexes on `status`, `assignee`, `due_date`.
